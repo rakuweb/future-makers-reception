@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(request: NextRequest) {
@@ -27,9 +26,9 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json(created, { status: 201 });
-  } catch (error) {
+  } catch (error: any) {
     // ユニーク制約違反 (P2002) = 二重受付 → 409 で返す
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002" && studentId) {
+    if (error?.code === "P2002" && studentId) {
       const existing = studentId
         ? await prisma.participant.findUnique({ where: { studentId } }).catch(() => null)
         : null;
