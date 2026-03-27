@@ -9,9 +9,11 @@ export async function POST(request: NextRequest) {
     const { name, affiliation, grade } = body;
     studentId = body.studentId;
 
-    const existing = await prisma.participant.findUnique({
-      where: { studentId },
-    });
+    const existing = studentId
+      ? await prisma.participant.findUnique({
+          where: { studentId },
+        })
+      : null;
 
     if (existing) {
       return NextResponse.json(
@@ -21,14 +23,16 @@ export async function POST(request: NextRequest) {
     }
 
     const created = await prisma.participant.create({
-      data: { name, affiliation, grade, studentId },
+      data: { name, affiliation, grade, studentId: studentId ?? null },
     });
 
     return NextResponse.json(created, { status: 201 });
   } catch (error) {
     // ユニーク制約違反 (P2002) = 二重受付 → 409 で返す
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002" && studentId) {
-      const existing = await prisma.participant.findUnique({ where: { studentId } }).catch(() => null);
+      const existing = studentId
+        ? await prisma.participant.findUnique({ where: { studentId } }).catch(() => null)
+        : null;
       return NextResponse.json(
         { error: "already_checked_in", participant: existing },
         { status: 409 }
